@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAssembly Example</title>
+</head>
+
+<body>
+  <h1>WebAssembly Example</h1>
+  <div>
+    <label for="urlInput">URL:</label>
+    <input type="text" id="urlInput" placeholder="Enter URL" />
+  </div>
+  <div>
+    <label for="messageInput">Message:</label>
+    <input type="text" id="messageInput" placeholder="Enter Message" />
+  </div>
+  <button id="wasmButton">Call WebAssembly Function</button>
+  <div>
+    <label for="receivedMessage">Received Message:</label>
+    <textarea id="receivedMessage" readonly></textarea>
+  </div>
+  <script type="module">
+    import init, { ws_ping } from './pkg/task2.js';
+
+    async function run() {
+      await init();
+      document.getElementById('wasmButton').addEventListener('click', test);
+    }
+
+    async function test() {
+      console.log("Test called");
+      const url = document.getElementById('urlInput').value;
+      const message = document.getElementById('messageInput').value;
+      try {
+        const result = await ws_ping(url, message);
+        console.log(result);
+        document.getElementById('receivedMessage').value = result;
+      } catch (error) {
+        console.error("Error calling ws_ping:", error);
+        document.getElementById('receivedMessage').value = "Error calling ws_ping";
+      }
+    }
+
+    run();
+  </script>
+</body>
+
+</html>
