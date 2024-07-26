@@ -55,7 +55,6 @@ mod tests {
         let y = ProjectivePoint::GENERATOR * &x;
         let dlog_proof = DLogProof::prove(sid, pid, x, y);
         let string = dlog_proof.to_dict().to_string();
-        dbg!(&string);
         assert!(string.contains(r#""s":["#));
         assert!(string.contains(r#""t":["#));
     }

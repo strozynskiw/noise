@@ -1,5 +1,7 @@
+mod error;
 mod random;
 
+use error::DLogProofError;
 use k256::elliptic_curve::group::GroupEncoding;
 use k256::elliptic_curve::ops::Reduce;
 use k256::elliptic_curve::sec1::FromEncodedPoint;
@@ -81,35 +83,40 @@ impl DLogProof {
     /// # Returns
     ///
     /// - `serde_json::Value`: contains {"t": ... "s": ...} as json object
-    pub fn from_dict(json: serde_json::Value) -> Result<Self, String> {
+    pub fn from_dict(json: serde_json::Value) -> Result<Self, DLogProofError> {
         let t_bytes = unpack_bytes(&json["t"])?;
         let s_bytes = unpack_bytes(&json["s"])?;
 
         let recovered_point: Option<_> = ProjectivePoint::from_encoded_point(
-            &k256::EncodedPoint::from_bytes(&t_bytes).map_err(|e| e.to_string())?,
+            &k256::EncodedPoint::from_bytes(&t_bytes)
+                .map_err(|e| DLogProofError::Other(e.into()))?,
         )
         .into();
 
         let recovered_scalar = <Scalar as Reduce<U256>>::reduce_bytes(s_bytes.as_slice().into());
 
         Ok(DLogProof {
-            t: recovered_point.ok_or("Could not convert recovered_point")?,
+            t: recovered_point.ok_or(DLogProofError::DeserializingError(
+                "Could not convert recovered_point".to_string(),
+            ))?,
             s: recovered_scalar,
         })
     }
 }
 
-fn unpack_bytes(json: &serde_json::Value) -> Result<Vec<u8>, String> {
-    let t_bytes: Result<Vec<u8>, String> = json
-        .as_array()
-        .ok_or("Expected an array".to_string())?
-        .iter()
-        .map(|x| {
-            x.as_u64()
-                .and_then(|n| u8::try_from(n).ok())
-                .ok_or("Invalid number".to_string())
-        })
-        .collect();
+fn unpack_bytes(json: &serde_json::Value) -> Result<Vec<u8>, DLogProofError> {
+    let t_bytes: Result<Vec<u8>, DLogProofError> =
+        json.as_array()
+            .ok_or(DLogProofError::DeserializingError(
+                "Expected an array".to_string(),
+            ))?
+            .iter()
+            .map(|x| {
+                x.as_u64().and_then(|n| u8::try_from(n).ok()).ok_or(
+                    DLogProofError::DeserializingError("Invalid number".to_string()),
+                )
+            })
+            .collect();
     t_bytes
 }
 
