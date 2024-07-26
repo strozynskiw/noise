@@ -30,6 +30,6 @@ pub fn ws_ping(endpoint: String, message: String) -> js_sys::Promise {
 
         console::log_1(&"Received and validated response.".into());
 
-        return Ok(JsValue::from_str(&msg.to_string()));
+        Ok(JsValue::from_str(&msg.to_string()))
     })
 }
